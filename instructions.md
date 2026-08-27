@@ -2,9 +2,9 @@
 
 ## Documentation
 
-- [Discourse Admin Quick Start](https://github.com/discourse/discourse/blob/main/docs/ADMIN-QUICK-START-GUIDE.md) — what to do in the admin panel once your forum is up.
-- [Discourse Meta](https://meta.discourse.org) — the upstream community, and where every configuration question is already answered.
-- [Email troubleshooting](https://meta.discourse.org/t/troubleshooting-email-on-a-new-discourse-install/16326) — the upstream guide for when mail is configured but not arriving.
+- [Admin quick start](https://github.com/discourse/discourse/blob/main/docs/ADMIN-QUICK-START-GUIDE.md) — what to do in the admin panel once your forum is up.
+- [Configuring email](https://github.com/discourse/discourse/blob/main/docs/INSTALL-email.md) — choosing a mail provider and what each SMTP setting means.
+- [Installing plugins](https://github.com/discourse/discourse/blob/main/docs/PLUGINS.md) — how Discourse plugins work and what they can change.
 
 ## What you get on StartOS
 
