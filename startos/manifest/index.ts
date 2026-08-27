@@ -4,22 +4,24 @@ import { long, short } from './i18n'
 export const manifest = setupManifest({
   id: 'discourse',
   title: 'Discourse',
-  license: 'MIT', // TODO: match the upstream project's license
-  packageRepo: 'https://github.com/REPLACE_ME/discourse-startos', // TODO: set the packaging repo URL
-  upstreamRepo: 'https://github.com/REPLACE_ME/REPLACE_ME', // TODO: set the upstream project URL
-  marketingUrl: 'https://REPLACE_ME', // TODO: set or remove
-  donationUrl: 'https://REPLACE_ME', // TODO: set or remove
+  license: 'GPL-2.0',
+  packageRepo: 'https://github.com/Start9Labs/discourse-startos',
+  upstreamRepo: 'https://github.com/discourse/discourse',
+  marketingUrl: 'https://www.discourse.org',
+  donationUrl: null,
   description: { short, long },
-  // 'example-volume' is an arbitrary id — name volumes whatever suits the
-  // service. It must match the volumeId mounted in startos/main.ts and the
-  // volume backed up in startos/backups.ts.
-  volumes: ['example-volume'],
+  volumes: ['startos', 'shared', 'db', 'redis', 'assets'],
   images: {
-    // 'example-image' is an arbitrary id — it must match the imageId used in
-    // startos/main.ts. TODO: replace the hello-world image with your service's
-    // image — set dockerTag (or add a Dockerfile) and rename this key.
-    'example-image': {
-      source: { dockerTag: 'ghcr.io/start9labs/hello-world:2.0.0' },
+    discourse: {
+      source: { dockerTag: 'discourse/discourse:2026.7.2' },
+      arch: ['x86_64', 'aarch64'],
+    },
+    postgres: {
+      source: { dockerTag: 'pgvector/pgvector:pg18' },
+      arch: ['x86_64', 'aarch64'],
+    },
+    valkey: {
+      source: { dockerTag: 'valkey/valkey:9-alpine' },
       arch: ['x86_64', 'aarch64'],
     },
   },
