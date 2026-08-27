@@ -31,14 +31,9 @@ verified, tried, and decided belongs in the commit message and the PR body.
 
 ## This repo
 
-<!--
-TODO: write the bullets for this package, then delete this comment.
-
-Only what someone *changing* this package needs and cannot get from README.md or
-instructions.md. What belongs here, and what does not, is set out under
-"AGENTS.md and CLAUDE.md":
-
-  ../start-technologies/projects/start-sdk/docs/src/project-structure.md
-
-A simple package needs none of this — delete the section rather than padding it.
--->
+- **`main` must not read the whole store with `.const()`.** `set-admin-password` writes `adminEmail`, and a read spanning it would restart Discourse the instant a user creates their account. Add a key to the projection only if changing it should restart the service.
+- **`prepareStack` must stay free of `.const()`.** An init handler re-runs from the top on every change to anything it reads reactively, and this one costs a full asset compile. That is why it resolves SMTP to `null` rather than calling `getSmtpCredentials`, which reads the system SMTP settings reactively.
+- **A `DISCOURSE_*` variable shadows the site setting of the same name and hides it from the admin panel** (`lib/site_setting_extension.rb`). Adding one to `discourseEnv` takes that setting away from the administrator, so only put a setting there the package genuinely owns.
+- **`DISCOURSE_DB_SOCKET` must stay set to the empty string.** Discourse prefers a unix socket when it is unset, and the sidecar is reachable only over TCP.
+- **Anything that execs into the app image must run the image's own `/etc/runit/1.d` scripts itself.** The entrypoint runs them; a bare `exec` does not. `00-ensure-links` populates `/shared`, without which `rake` dies on a dangling `public/uploads`; `copy-env` writes `config/discourse.conf`, without which the `DISCOURSE_*` environment reaches Discourse only through a fallback provider that a shipped `discourse.conf` would silently displace.
+- **The primary URL splits into `DISCOURSE_HOSTNAME` and `DISCOURSE_PORT`.** A StartOS `.local` address carries a per-service port, and Discourse builds absolute links from the two settings separately.
