@@ -58,11 +58,13 @@ Five volumes. Only two of them hold anything the user would miss.
 | `shared`  | `/shared`                              | uploads, Discourse's own export archives, Rails logs, spool state |
 | `db`      | `/var/lib/postgresql`                  | PostgreSQL cluster (`PGDATA` is `/18/docker` inside it)          |
 | `redis`   | `/data`                                | Valkey RDB snapshots — the sidekiq job queue                     |
-| `assets`  | `/var/www/discourse/public/assets`     | compiled CSS and JavaScript                                      |
+| `assets`  | `public/assets` + `tmp/pretty-text-processor` | compiled CSS and JavaScript, and the PrettyText bundle     |
 
 `/shared` is the single application data path: `public/uploads`, `public/backups`, `log/*.log` and `tmp/{backups,restores}` are all symlinks into it inside the image.
 
-`public/assets` does not exist in the image at all — it is pure build output, so the volume shadows nothing. It is wiped and rebuilt from scratch on every install, update and restore.
+The `assets` volume is mounted twice, at two subpaths, because `assets:precompile` writes to two places. Neither exists in the image, so neither mount shadows anything, and both are wiped and rebuilt on every install, update and restore.
+
+`tmp/pretty-text-processor` is the one that is easy to miss. Discourse refuses to boot in production when it is absent rather than building it on demand (`lib/pretty_text.rb` — `core_bundle_source` raises), and `tmp/` is otherwise container-ephemeral, so without its own mount the daemon starts against an empty directory and unicorn crash-loops. `tmp/asset-processor`, the other precompiled bundle, ships baked into the image and needs no mount.
 
 ## File Models
 
@@ -186,7 +188,7 @@ volumes:
   shared: /shared
   db: /var/lib/postgresql
   redis: /data
-  assets: /var/www/discourse/public/assets
+  assets: [/var/www/discourse/public/assets, /var/www/discourse/tmp/pretty-text-processor]
 file_models:
   - store.json
 startos_managed_env_vars:

@@ -13,7 +13,12 @@ export const manifest = setupManifest({
   volumes: ['startos', 'shared', 'db', 'redis', 'assets'],
   images: {
     discourse: {
-      source: { dockerTag: 'discourse/discourse:2026.7.2' },
+      // Digest-pinned: the `-latest` tag is rebuilt in place from `main`, so
+      // the name alone does not identify a schema level.
+      source: {
+        dockerTag:
+          'discourse/discourse:2026.9.0-latest@sha256:32eb7c5650378a744658ba962b04cbe95ca3f1b949808be19be43cdd4601d237',
+      },
       arch: ['x86_64', 'aarch64'],
     },
     postgres: {
