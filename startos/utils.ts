@@ -13,6 +13,14 @@ export const POSTGRES_USER = 'postgres'
 
 export const SHARED_PATH = '/shared'
 export const ASSETS_PATH = '/var/www/discourse/public/assets'
+/**
+ * `assets:precompile` builds the PrettyText bundle here, and in production
+ * Discourse refuses to boot without it rather than building it on demand
+ * (`lib/pretty_text.rb` — `core_bundle_source` raises). It lands outside
+ * `public/assets`, so it needs a mount of its own or the daemon starts against
+ * an empty `tmp/` and unicorn crash-loops.
+ */
+export const PRETTY_TEXT_PATH = '/var/www/discourse/tmp/pretty-text-processor'
 export const VALKEY_PATH = '/data'
 export const APP_HOME = '/var/www/discourse'
 
@@ -80,8 +88,14 @@ export const appMounts = sdk.Mounts.of()
   })
   .mountVolume({
     volumeId: 'assets',
-    subpath: null,
+    subpath: 'public',
     mountpoint: ASSETS_PATH,
+    readonly: false,
+  })
+  .mountVolume({
+    volumeId: 'assets',
+    subpath: 'pretty-text',
+    mountpoint: PRETTY_TEXT_PATH,
     readonly: false,
   })
 
@@ -211,7 +225,7 @@ export function prepareAppCommand(): [string, ...string[]] {
     '-c',
     [
       '/etc/runit/1.d/00-ensure-links',
-      `chown -R ${APP_OWNER} ${SHARED_PATH} ${ASSETS_PATH}`,
+      `chown -R ${APP_OWNER} ${SHARED_PATH} ${ASSETS_PATH} ${PRETTY_TEXT_PATH}`,
       `rm -rf ${APP_HOME}/plugins/docker_manager`,
     ].join(' && '),
   ]
@@ -244,7 +258,7 @@ export function precompileCommand(): [string, ...string[]] {
   return [
     'sh',
     '-c',
-    `find ${ASSETS_PATH} -mindepth 1 -delete && /etc/runit/1.d/copy-env && rake assets:precompile`,
+    `find ${ASSETS_PATH} ${PRETTY_TEXT_PATH} -mindepth 1 -delete && /etc/runit/1.d/copy-env && rake assets:precompile`,
   ]
 }
 
