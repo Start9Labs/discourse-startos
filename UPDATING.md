@@ -34,11 +34,11 @@ docker manifest inspect discourse/discourse:<tag> | jq -r '.manifests[].platform
 
 ## The tag is mutable — pin the digest
 
-`discourse/discourse:2026.9.0-latest` is **rebuilt in place**. The git tag of that name
-carries migrations up to `20260824072257`; the image published under it carries
-`20260826124054`. The tag name identifies a release line, not a build, so on its own it
-does not identify a schema level — and a schema level is exactly what decides whether a
-backup from another instance can be restored.
+`discourse/discourse:2026.9.0-latest` is **rebuilt in place**. Its git tag is cut when
+the release line begins, while daily image builds continue taking newer `main` commits
+and schema migrations. The tag name identifies a release line, not a build, so on its own
+it does not identify a schema level — and a schema level is exactly what decides whether
+a backup from another instance can be restored.
 
 So the pin carries both: the tag for a human, the digest for the machine.
 
