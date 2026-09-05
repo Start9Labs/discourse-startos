@@ -17,7 +17,7 @@ export const manifest = setupManifest({
       // the name alone does not identify a schema level.
       source: {
         dockerTag:
-          'discourse/discourse:2026.9.0-latest@sha256:32eb7c5650378a744658ba962b04cbe95ca3f1b949808be19be43cdd4601d237',
+          'discourse/discourse:2026.9.0-latest@sha256:1cd645f0864e3a8d90980b240ab08be6f38c9a77e6dd3c45e5c18b30972d35b6',
       },
       arch: ['x86_64', 'aarch64'],
     },
