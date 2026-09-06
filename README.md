@@ -109,7 +109,7 @@ That pass takes roughly 40 seconds on a fresh install. Ordinary restarts skip it
 
 The same handler creates the four PostgreSQL extensions and, before compiling, deletes the previous version's assets — the volume outlives the image, and propshaft does not remove what it no longer emits.
 
-`init` picks the `.local` address as the primary URL when none is stored, so a fresh install starts without waiting for the user. Discourse's image refuses to boot at all without `DISCOURSE_HOSTNAME` (`/etc/runit/1.d/install-ssl` exits non-zero, and `/etc/runit/1` runs its scripts with `--exit-on-error`), which is why the task raised when no address is available is `critical`.
+`init` picks the `.local` address as the primary URL when none is stored, so the user can start a fresh install without completing another action first. Discourse's image refuses to boot at all without `DISCOURSE_HOSTNAME` (`/etc/runit/1.d/install-ssl` exits non-zero, and `/etc/runit/1` runs its scripts with `--exit-on-error`), which is why the task raised when no address is available is `critical`.
 
 The administrator account is created by an action, not by Discourse's sign-up flow — see [Actions](#actions).
 
