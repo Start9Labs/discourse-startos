@@ -14,11 +14,12 @@ Discourse builds every absolute link it writes — email notifications, invites,
 
 ## Getting set up
 
-1. Open the **Actions** tab and run **Set Admin Password**. Enter the email address you want to sign in with; Discourse generates a password and shows it to you once. Copy it before closing the dialog.
-2. Open the web interface and sign in with those credentials.
-3. Work through Discourse's own setup wizard — site name, description, logo, who can see the forum.
-4. If you plan to invite other people, run **Configure SMTP** first. Discourse sends an activation email to every new account, so without a mail server nobody but you can sign in.
-5. If you reach the forum at a public domain rather than its `.local` address, run **Set Primary URL** and choose that domain.
+1. Start Discourse from its service page.
+2. Open the **Actions** tab and run **Set Admin Password**. Enter the email address you want to sign in with; Discourse generates a password and shows it to you once. Copy it before closing the dialog.
+3. Open the web interface and sign in with those credentials.
+4. Work through Discourse's own setup wizard — site name, description, logo, who can see the forum.
+5. If you plan to invite other people, run **Configure SMTP** first. Discourse sends an activation email to every new account, so without a mail server nobody but you can sign in.
+6. If you reach the forum at a public domain rather than its `.local` address, run **Set Primary URL** and choose that domain.
 
 ## Using Discourse
 
