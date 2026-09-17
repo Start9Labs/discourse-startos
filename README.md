@@ -42,7 +42,7 @@ Three unmodified upstream images, all `x86_64` and `aarch64`. Nothing is built f
 
 The Discourse image's command is `/sbin/boot`, which starts runit, so the daemon sets `runAsInit: true`. Its processes drop to `discourse:www-data` (uid 1000, gid 33) once runit is up.
 
-A `prepare-app` oneshot runs ahead of the daemon and does three things: invokes the image's own `/etc/runit/1.d/00-ensure-links` to populate `/shared`, chowns the volumes StartOS mounted root-owned, and deletes the `docker_manager` plugin. The first matters most outside the daemon — the entrypoint runs that script and a bare `exec` does not, so in the init chain `public/uploads` and `log/production.log` would be symlinks onto nothing and `rake db:migrate` would die writing the site icon.
+A `prepare-app` oneshot runs ahead of the daemon and does four things: invokes the image's own `/etc/runit/1.d/00-ensure-links` to populate `/shared`, chowns the volumes StartOS mounted root-owned, deletes the `docker_manager` plugin, and drops the nginx real-IP outlet described under [Network Access and Interfaces](#network-access-and-interfaces). The first matters most outside the daemon — the entrypoint runs that script and a bare `exec` does not, so in the init chain `public/uploads` and `log/production.log` would be symlinks onto nothing and `rake db:migrate` would die writing the site icon.
 
 Postgres must carry pgvector: Discourse's core migrations need `hstore`, `pg_trgm` and `unaccent`, and the `discourse-ai` plugin that ships inside the image adds `vector`. Stock `postgres` cannot satisfy it. The major version must also match the `postgresql-client` inside the Discourse image.
 
@@ -100,6 +100,8 @@ None.
 nginx inside the image accepts any `Host`; Discourse's own `EnforceHostname` middleware rewrites an unrecognized one to the configured primary hostname, so the forum answers on every address StartOS gives it.
 
 The binding takes the SDK default for `protocol: 'http'`, which sets `addXForwardedHeaders`. Rails therefore sees `X-Forwarded-Proto: https` and treats the request as secure.
+
+The image's nginx overwrites `X-Forwarded-For` with the address of its own peer, which here is the OS reverse proxy on the container bridge (`10.0.3.1`). Left alone, every visitor shares that one address in nginx's `limit_req`/`limit_conn` zones — a few concurrent readers are enough to trip the 12 r/s flood limit and answer 429 — and Discourse records it as everyone's IP. `prepare-app` writes `conf.d/outlets/before-server/10-startos-real-ip.conf` trusting the two bridge gateways the proxy connects from (`10.0.3.1`, `fd00:3::1`) with `real_ip_header X-Forwarded-For`, so `$remote_addr` is the client again before either the rate limiter or Rails sees it. Only the gateways, not the bridge subnets: every other package's container sits on the same bridge and can reach this port directly, and a subnet-wide trust would let one of them forge the header.
 
 ## Installation and First-Run Flow
 
@@ -161,6 +163,8 @@ Alongside it, two volumes are synced wholesale: `startos`, and `shared` minus `/
 `assets` and `redis` are excluded entirely. Assets are rebuilt during the restore's init pass. The Valkey volume holds the sidekiq queue and cache — a restored instance starts with an empty queue, so notification and digest emails that were pending at backup time are not sent.
 
 A restored instance is immediately usable. `secretKeyBase` comes back with `store.json`, so existing sessions and auth tokens survive.
+
+Discourse's own backup archives restore too, which is how an existing forum moves onto this package. The archive goes in `/shared/backups/default/` (host path `/media/startos/data/package-data/volumes/discourse/data/shared/backups/default/`, owner `1000:33`), where the admin panel's Backups page lists it; a restore needs the `allow_restore` site setting on (`discourse enable_restore` in the `discourse` subcontainer) and runs while the service is running, with `discourse restore <file>` from that subcontainer as the CLI equivalent. The archive's schema version must not exceed the running image's (`UPDATING.md` § Refreshing the digest on demand). Two things the restorer does deserve knowing in advance: it rewrites every occurrence of the backup's base URL to the current primary URL, so **set the primary URL to the forum's real address before restoring** — `set-primary-url` does not remap afterwards; and the CLI form sets `disable_emails` to `non-staff` unless passed `--no-disable-emails`. Posts containing uploads are rebaked by sidekiq afterwards at roughly twenty a minute, `rake posts:rebake_uncooked_posts` being the way to hurry it.
 
 ## Limitations and Differences
 

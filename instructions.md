@@ -36,6 +36,10 @@ The forum itself, with the admin panel at `/admin` once you are signed in as an 
 
 Each of these restarts Discourse to take effect.
 
+### Moving an existing forum here
+
+Discourse's own backups carry a forum across servers. On the old server, open **Admin → Backups**, create a backup with uploads, and download it. Here, run **Set Primary URL** first and choose the address the forum will actually be reached at — the restore rewrites every link in the forum to whichever address is current, and there is no undo. Then turn on **allow restore** under **Admin → Settings → Backups**, upload the file on the Backups page and choose **Restore**. Discourse switches off outgoing email for everyone but staff during a restore; turn it back on under **Admin → Settings → Email → disable emails** once you have checked the forum over. Run **Configure SMTP** here as well — mail settings do not travel with the backup.
+
 ### Updates
 
 Discourse's admin panel normally offers an in-app upgrade button. It is removed here — new Discourse versions arrive as StartOS updates instead, which keeps the database, the compiled assets and the application in step.

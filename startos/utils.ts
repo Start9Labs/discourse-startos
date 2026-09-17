@@ -27,6 +27,15 @@ export const APP_HOME = '/var/www/discourse'
 /** uid:gid the Discourse image's own processes run as, once runit drops privileges. */
 export const APP_OWNER = 'discourse:www-data'
 
+/** The image's nginx overwrites `X-Forwarded-For` with its peer — the OS proxy, connecting from the bridge gateways — unless that peer is trusted. */
+const REAL_IP_CONF = [
+  'set_real_ip_from 10.0.3.1;',
+  'set_real_ip_from fd00:3::1;',
+  'real_ip_header X-Forwarded-For;',
+].join('\\n')
+const REAL_IP_CONF_PATH =
+  '/etc/nginx/conf.d/outlets/before-server/10-startos-real-ip.conf'
+
 export function getNonLocalUrls(effects: T.Effects): Promise<string[]> {
   return sdk.host
     .getOwn(effects, uiHostId, (host) => {
@@ -227,6 +236,7 @@ export function prepareAppCommand(): [string, ...string[]] {
       '/etc/runit/1.d/00-ensure-links',
       `chown -R ${APP_OWNER} ${SHARED_PATH} ${ASSETS_PATH} ${PRETTY_TEXT_PATH}`,
       `rm -rf ${APP_HOME}/plugins/docker_manager`,
+      `printf '${REAL_IP_CONF}\\n' > ${REAL_IP_CONF_PATH}`,
     ].join(' && '),
   ]
 }
