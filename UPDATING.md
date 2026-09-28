@@ -59,6 +59,7 @@ one — the index is what covers both architectures.
 2. Set `version` in `startos/versions/current.ts` to `<tag>:0` — the `-latest` suffix included, so ExVer parses it as a prerelease and the line stays monotonic (`2026.9.0-latest` < `2026.10.0-latest`). Write release notes in all five locales.
 3. Check whether the image's PostgreSQL major moved — `docker run --rm discourse/discourse:<tag> printenv PG_MAJOR`. If it did, the `postgres` image tag and `POSTGRES_PGDATA_SUBPATH` in `startos/utils.ts` must move with it, and the upgrade needs a `pg_upgrade` path: a PostgreSQL data directory is not readable by a different major version.
 4. Check whether the bundled plugin set changed — `docker run --rm discourse/discourse:<tag> ls /var/www/discourse/plugins`. A plugin leaving core is a plugin an installed forum loses.
+5. Check that the image still ships both precompiled JavaScript bundles — `docker run --rm discourse/discourse:<tag> ls /var/www/discourse/tmp/asset-processor /var/www/discourse/tmp/pretty-text-processor` must list an `asset-processor-*.js` and a `pretty-text-*.js`. Init and the daemon run in separate containers and neither path is mounted, so the daemon only ever sees the bundles the image ships.
 
 Schema migrations and asset compilation run from `startos/init/prepareStack.ts` on the version edge, so nothing else needs touching for an ordinary bump.
 
