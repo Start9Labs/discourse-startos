@@ -58,13 +58,13 @@ Five volumes. Only two of them hold anything the user would miss.
 | `shared`  | `/shared`                              | uploads, Discourse's own export archives, Rails logs, spool state |
 | `db`      | `/var/lib/postgresql`                  | PostgreSQL cluster (`PGDATA` is `/18/docker` inside it)          |
 | `redis`   | `/data`                                | Valkey RDB snapshots — the sidekiq job queue                     |
-| `assets`  | `public/assets` + `tmp/pretty-text-processor` | compiled CSS and JavaScript, and the PrettyText bundle     |
+| `assets`  | `public/assets`                        | compiled CSS and JavaScript                                      |
 
 `/shared` is the single application data path: `public/uploads`, `public/backups`, `log/*.log` and `tmp/{backups,restores}` are all symlinks into it inside the image.
 
-The `assets` volume is mounted twice, at two subpaths, because `assets:precompile` writes to two places. Neither exists in the image, so neither mount shadows anything, and both are wiped and rebuilt on every install, update and restore.
+`public/assets` is empty in the image, so its mount shadows nothing; it is wiped and rebuilt on every install, update and restore.
 
-`tmp/pretty-text-processor` is the one that is easy to miss. Discourse refuses to boot in production when it is absent rather than building it on demand (`lib/pretty_text.rb` — `core_bundle_source` raises), and `tmp/` is otherwise container-ephemeral, so without its own mount the daemon starts against an empty directory and unicorn crash-loops. `tmp/asset-processor`, the other precompiled bundle, ships baked into the image and needs no mount.
+Discourse's two precompiled JavaScript bundles, `tmp/asset-processor` and `tmp/pretty-text-processor`, ship in the image and are not mounted: the image has no Node or `pnpm` to rebuild them. Hide or delete either and `rake db:migrate`, which loads both before migrating, fails on `Errno::ENOENT … pnpm`.
 
 ## File Models
 
@@ -168,7 +168,7 @@ Discourse's own backup archives restore too, which is how an existing forum move
 
 ## Limitations and Differences
 
-1. **The in-app upgrade page is removed.** The image bundles the `docker_manager` plugin, which serves `/admin/upgrade`; the app is a real git clone, so pressing Upgrade would pull new upstream code into the container and desync it from the pinned image. The plugin directory is deleted before assets are compiled and before the daemon starts.
+1. **The in-app upgrade page is removed.** `/admin/upgrade` belongs to the `docker_manager` plugin, which the current image does not ship and which `prepare-app` deletes from any image that does, so new Discourse versions arrive only as StartOS updates.
 2. **Login via Discourse ID is not enabled.** Upstream now offers `id.discourse.com` as a fallback when SMTP is skipped. It is a hosted third-party identity provider; this package creates the administrator locally instead.
 3. **Version checks are off and cannot be turned on.** `version_checks` is shadowed by the environment, so it does not appear in the admin panel.
 4. **MaxMind geolocation is not configured.** IP-to-country lookups need a MaxMind account and license key, and the package sets the database refresh interval to zero so asset compilation makes no outbound request.
@@ -192,7 +192,7 @@ volumes:
   shared: /shared
   db: /var/lib/postgresql
   redis: /data
-  assets: [/var/www/discourse/public/assets, /var/www/discourse/tmp/pretty-text-processor]
+  assets: /var/www/discourse/public/assets
 file_models:
   - store.json
 startos_managed_env_vars:

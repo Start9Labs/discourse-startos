@@ -1,7 +1,9 @@
 import { IMPOSSIBLE, VersionInfo } from '@start9labs/start-sdk'
+import { rm } from 'fs/promises'
+import { sdk } from '../sdk'
 
 export const current = VersionInfo.of({
-  version: '2026.10.0-latest:0',
+  version: '2026.10.0-latest:1',
   releaseNotes: {
     en_US: `Updated Discourse to 2026.10.0-latest.
 
@@ -40,7 +42,12 @@ export const current = VersionInfo.of({
 [Liste complète des modifications du projet](https://github.com/discourse/discourse/compare/v2026.9.0-latest...v2026.10.0-latest)`,
   },
   migrations: {
-    up: async ({ effects }) => {},
+    up: async () => {
+      await rm(sdk.volumes.assets.subpath('pretty-text'), {
+        recursive: true,
+        force: true,
+      })
+    },
     down: IMPOSSIBLE,
   },
 })
