@@ -1,5 +1,6 @@
 import { storeJson } from './fileModels/store.json'
 import { i18n } from './i18n'
+import { primaryUrl } from './primaryUrl'
 import { sdk } from './sdk'
 import {
   appSub,
@@ -25,13 +26,13 @@ export const main = sdk.setupMain(async ({ effects }) => {
     .read((s) => ({
       postgresPassword: s.postgresPassword,
       secretKeyBase: s.secretKeyBase,
-      primaryUrl: s.primaryUrl,
       smtp: s.smtp,
       unicornWorkers: s.unicornWorkers,
     }))
     .const(effects)
   if (!store) throw new Error('store.json not found')
-  if (!store.primaryUrl) {
+  const url = await primaryUrl.bestUsable(effects).const()
+  if (!url) {
     throw new Error(
       'Discourse has no primary URL. Run the Set Primary URL action.',
     )
@@ -39,7 +40,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
 
   const secrets = requireSecrets(store)
   const smtp = await getSmtpCredentials(effects, store.smtp)
-  const { hostname, port } = toHostAndPort(store.primaryUrl)
+  const { hostname, port } = toHostAndPort(url)
   const env = discourseEnv({
     hostname,
     port,

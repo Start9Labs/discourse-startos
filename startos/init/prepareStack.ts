@@ -1,5 +1,6 @@
 import { storeJson } from '../fileModels/store.json'
 import { i18n } from '../i18n'
+import { primaryUrl } from '../primaryUrl'
 import { sdk } from '../sdk'
 import {
   appSub,
@@ -31,10 +32,9 @@ export const prepareStack = sdk.setupOnInit(async (effects, kind, progress) => {
   if (!store) throw new Error('store.json not found')
 
   const secrets = requireSecrets(store)
+  const url = await primaryUrl.bestUsable(effects).once()
   const env = discourseEnv({
-    ...(store.primaryUrl
-      ? toHostAndPort(store.primaryUrl)
-      : { hostname: 'localhost', port: '' }),
+    ...(url ? toHostAndPort(url) : { hostname: 'localhost', port: '' }),
     secrets,
     smtp: null,
     unicornWorkers: store.unicornWorkers,
@@ -99,7 +99,10 @@ export const prepareStack = sdk.setupOnInit(async (effects, kind, progress) => {
       exec: {
         fn: async () => {
           migratePhase.start()
-          await app.execFail(rakeCommand('db:migrate'), { env }, null)
+          await app.execFail(rakeCommand('db:migrate'), {
+            env,
+            timeout: null,
+          })
           migratePhase.complete()
           return null
         },
@@ -111,11 +114,10 @@ export const prepareStack = sdk.setupOnInit(async (effects, kind, progress) => {
       exec: {
         fn: async () => {
           assetPhase.start()
-          await app.execFail(
-            precompileCommand(),
-            { env: { ...env, SKIP_EMBER_CLI_COMPILE: '1' } },
-            null,
-          )
+          await app.execFail(precompileCommand(), {
+            env: { ...env, SKIP_EMBER_CLI_COMPILE: '1' },
+            timeout: null,
+          })
           assetPhase.complete()
           return null
         },

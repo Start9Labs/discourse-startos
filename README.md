@@ -97,6 +97,8 @@ None.
 | --------- | ---- | -------------- | ------------------------------------------ |
 | `ui`      | `ui` | 80             | the forum and, at `/admin`, the admin panel |
 
+The interface nominates the primary URL as its launcher address, so **Open UI** opens the forum at the address Discourse writes into its links.
+
 nginx inside the image accepts any `Host`; Discourse's own `EnforceHostname` middleware rewrites an unrecognized one to the configured primary hostname, so the forum answers on every address StartOS gives it.
 
 The binding takes the SDK default for `protocol: 'http'`, which sets `addXForwardedHeaders`. Rails therefore sees `X-Forwarded-Proto: https` and treats the request as secure.
@@ -111,7 +113,7 @@ That pass takes roughly 40 seconds on a fresh install. Ordinary restarts skip it
 
 The same handler creates the four PostgreSQL extensions and, before compiling, deletes the previous version's assets — the volume outlives the image, and propshaft does not remove what it no longer emits.
 
-`init` picks the `.local` address as the primary URL when none is stored, so the user can start a fresh install without completing another action first. Discourse's image refuses to boot at all without `DISCOURSE_HOSTNAME` (`/etc/runit/1.d/install-ssl` exits non-zero, and `/etc/runit/1` runs its scripts with `--exit-on-error`), which is why the task raised when no address is available is `critical`.
+`init` picks the `.local` address as the primary URL when none is stored, so the user can start a fresh install without completing another action first. Discourse's image refuses to boot at all without `DISCOURSE_HOSTNAME` (`/etc/runit/1.d/install-ssl` exits non-zero, and `/etc/runit/1` runs its scripts with `--exit-on-error`), which is why the task raised when there is no `.local` address to pick is `critical`.
 
 The administrator account is created by an action, not by Discourse's sign-up flow — see [Actions](#actions).
 
@@ -121,19 +123,19 @@ All four are user-facing; none are hidden. Each writes to `store.json` and nothi
 
 **`set-admin-password`** — creates the administrator account or re-issues its password. Runs `rails runner` in a temporary Discourse subcontainer against the live database, going through Discourse's own `User` model so the password is hashed the way sign-in verifies it and the email tokens are confirmed the way `rake admin:create` confirms them. Takes 20–40 seconds (a full Rails boot). Safe to repeat: it finds the existing user by email and resets the password. The password is returned to the caller and never stored. Requires the service running.
 
-**`set-primary-url`** — sets `DISCOURSE_HOSTNAME` from the chosen address. Restarts Discourse. Repeat-safe. Links already written into existing post bodies keep the old address; upstream's `discourse remap` is the tool for rewriting those, and this package does not wrap it.
+**`set-primary-url`** — sets `DISCOURSE_HOSTNAME` from the chosen address; the form pre-selects the `.local` address when nothing is stored. Restarts Discourse. Repeat-safe. Links already written into existing post bodies keep the old address; upstream's `discourse remap` is the tool for rewriting those, and this package does not wrap it.
 
 **`configure-smtp`** — three-mode SMTP (disabled / StartOS system / custom). Restarts Discourse. Repeat-safe. Until it is run, only accounts created by `set-admin-password` can sign in.
 
-**`set-worker-count`** — sets `UNICORN_WORKERS`, 1–8, default 1. Restarts Discourse. Each worker costs roughly 250 MB resident.
+**`set-worker-count`** — sets `UNICORN_WORKERS`, 1–8, default 1. Restarts Discourse. Each worker is a separate Unicorn process, so memory use grows with the count.
 
 ## Tasks
 
-Two, both raised from `init` and both cleared by running the action they point at.
+Two, both raised from `init`. Running the action a task points at clears it; the primary-URL task also clears itself when the stored address is offered again.
 
 | Task                 | Severity    | Raised when                                                                         |
 | -------------------- | ----------- | ------------------------------------------------------------------------------------ |
-| `set-primary-url`    | `critical`  | the stored primary URL is no longer among the service's addresses, or none was found |
+| `set-primary-url`    | `critical`  | the stored primary URL is unset, or no longer among the service's addresses          |
 | `set-admin-password` | `important` | `adminEmail` is unset in `store.json`                                                |
 
 The primary-URL task is `critical` because the container genuinely cannot boot without a hostname; while it is raised the service will not start and its ordinary controls are suspended. It can return if the user later removes the address Discourse was pointed at.

@@ -19,7 +19,7 @@ const dict = {
   'Discourse cannot start without a primary URL. Choose one that is still available.': 10,
   'Create the administrator account before anyone signs up, so the forum is not claimed by the first visitor.': 11,
 
-  // actions/setPrimaryUrl.ts
+  // primaryUrl.ts
   URL: 12,
   'Set Primary URL': 13,
   'Choose the address Discourse treats as its own. Every absolute link it writes — email notifications, invites, password resets, social previews — is built from this, so it should be the address people actually use. Discourse restarts to apply the change.': 14,
@@ -41,9 +41,10 @@ const dict = {
 
   // actions/setWorkerCount.ts
   'Web Workers': 26,
-  'How many requests Discourse serves at once. Each worker costs roughly 250 MB of memory; one is enough for a small community, and a busy forum on a machine with memory to spare benefits from more.': 27,
+  'How many requests Discourse serves at once. Each worker is a separate process, so more workers handle more simultaneous visitors at the cost of more memory and CPU.': 27,
   'Set Worker Count': 28,
   'Trade memory for concurrency. Discourse restarts to apply the change.': 29,
+  workers: 30,
 } as const
 
 /**
