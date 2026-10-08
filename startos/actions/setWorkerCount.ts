@@ -8,7 +8,7 @@ const inputSpec = InputSpec.of({
   workers: Value.number({
     name: i18n('Web Workers'),
     description: i18n(
-      'How many requests Discourse serves at once. Each worker costs roughly 250 MB of memory; one is enough for a small community, and a busy forum on a machine with memory to spare benefits from more.',
+      'How many requests Discourse serves at once. Each worker is a separate process, so more workers handle more simultaneous visitors at the cost of more memory and CPU.',
     ),
     required: true,
     default: 1,
@@ -16,7 +16,7 @@ const inputSpec = InputSpec.of({
     max: 8,
     step: 1,
     integer: true,
-    units: 'workers',
+    units: i18n('workers'),
   }),
 })
 

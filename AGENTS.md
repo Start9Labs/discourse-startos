@@ -18,7 +18,10 @@ Freshly scaffolded? Work the
 guide page, not a file in this repo — read it, don't copy it in.
 
 Keep `README.md` (technical reference for an AI support or administering agent) and
-`instructions.md` (end-user docs) in sync with your changes.
+`instructions.md` (end-user docs) in sync with your changes. This file restates neither:
+whoever changes the package has both, so it carries only what they don't — repo mechanics,
+a change that looks right and is not, where the next thing gets added, a naming trap, a
+build or test invocation particular to this repo.
 
 **Fix a defect you spot rather than reporting it** — you have the package open and the
 context to be sure. File **a GitHub issue on this repo** only when the call isn't yours to
@@ -32,8 +35,6 @@ verified, tried, and decided belongs in the commit message and the PR body.
 ## This repo
 
 - **`main` must not read the whole store with `.const()`.** `set-admin-password` writes `adminEmail`, and a read spanning it would restart Discourse the instant a user creates their account. Add a key to the projection only if changing it should restart the service.
-- **`prepareStack` must stay free of `.const()`.** An init handler re-runs from the top on every change to anything it reads reactively, and this one costs a full asset compile. That is why it resolves SMTP to `null` rather than calling `getSmtpCredentials`, which reads the system SMTP settings reactively.
-- **A `DISCOURSE_*` variable shadows the site setting of the same name and hides it from the admin panel** (`lib/site_setting_extension.rb`). Adding one to `discourseEnv` takes that setting away from the administrator, so only put a setting there the package genuinely owns.
-- **`DISCOURSE_DB_SOCKET` must stay set to the empty string.** Discourse prefers a unix socket when it is unset, and the sidecar is reachable only over TCP.
-- **Anything that execs into the app image must run the image's own `/etc/runit/1.d` scripts itself.** The entrypoint runs them; a bare `exec` does not. `00-ensure-links` populates `/shared`, without which `rake` dies on a dangling `public/uploads`; `copy-env` writes `config/discourse.conf`, without which the `DISCOURSE_*` environment reaches Discourse only through a fallback provider that a shipped `discourse.conf` would silently displace.
-- **The primary URL splits into `DISCOURSE_HOSTNAME` and `DISCOURSE_PORT`.** A StartOS `.local` address carries a per-service port, and Discourse builds absolute links from the two settings separately.
+- **`prepareStack` must stay free of `.const()`.** An init handler re-runs from the top on every change to anything it reads reactively, and this one costs a full asset compile. That is why it resolves SMTP to `null` rather than calling `getSmtpCredentials`.
+- **Put a `DISCOURSE_*` variable in `discourseEnv` only for a setting the package owns.** It hides the site setting of the same name from the admin panel.
+- **Anything that execs into the app image must run the image's own `/etc/runit/1.d` scripts itself** (`00-ensure-links`, `copy-env`) — the entrypoint runs them; a bare `exec` does not.

@@ -1,6 +1,7 @@
 import { utils } from '@start9labs/start-sdk'
 import { storeJson } from '../fileModels/store.json'
 import { i18n } from '../i18n'
+import { primaryUrl } from '../primaryUrl'
 import { sdk } from '../sdk'
 import {
   appMounts,
@@ -69,8 +70,8 @@ export const setAdminPassword = sdk.Action.withInput(
   async ({ effects, input }) => {
     const store = await storeJson.read().once()
     if (!store) throw new Error('store.json not found')
-    const { primaryUrl } = store
-    if (!primaryUrl) throw new Error('Discourse has no primary URL')
+    const url = await primaryUrl.bestUsable(effects).once()
+    if (!url) throw new Error('Discourse has no primary URL')
 
     const password = utils.getDefaultString({
       charset: 'a-z,A-Z,0-9',
@@ -84,23 +85,20 @@ export const setAdminPassword = sdk.Action.withInput(
       'set-admin-password',
       async (sub) => {
         await sub.writeFile(RUNNER_SCRIPT_PATH, CREATE_ADMIN)
-        const { stdout } = await sub.execFail(
-          railsRunnerCommand(),
-          {
-            env: {
-              ...discourseEnv({
-                ...toHostAndPort(primaryUrl),
-                secrets: requireSecrets(store),
-                smtp: null,
-                unicornWorkers: store.unicornWorkers,
-                runOnBoot: false,
-              }),
-              STARTOS_ADMIN_EMAIL: input.email,
-              STARTOS_ADMIN_PASSWORD: password,
-            },
+        const { stdout } = await sub.execFail(railsRunnerCommand(), {
+          env: {
+            ...discourseEnv({
+              ...toHostAndPort(url),
+              secrets: requireSecrets(store),
+              smtp: null,
+              unicornWorkers: store.unicornWorkers,
+              runOnBoot: false,
+            }),
+            STARTOS_ADMIN_EMAIL: input.email,
+            STARTOS_ADMIN_PASSWORD: password,
           },
-          null,
-        )
+          timeout: null,
+        })
         return stdout.toString()
       },
     )

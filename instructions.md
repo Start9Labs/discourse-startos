@@ -31,7 +31,7 @@ The forum itself, with the admin panel at `/admin` once you are signed in as an 
 
 - **Set Admin Password** — creates the administrator account, or issues it a new password. Run it again any time you need to get back in.
 - **Configure SMTP** — points Discourse at a mail server, either the one StartOS provides or your own. Required before anyone else can register or reset a password.
-- **Set Primary URL** — chooses which of your addresses Discourse treats as canonical. Links already written into existing posts keep the old address.
+- **Set Primary URL** — chooses which of your addresses Discourse treats as canonical, and the one **Open UI** opens. Links already written into existing posts keep the old address.
 - **Set Worker Count** — trades memory for the number of requests Discourse serves at once. One worker suits a small community; raise it if the forum feels slow and the server has memory to spare.
 
 Each of these restarts Discourse to take effect.
