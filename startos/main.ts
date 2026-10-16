@@ -71,7 +71,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
           ])
           return exitCode === 0
             ? { result: 'success', message: null }
-            : { result: 'loading', message: null }
+            : { result: 'starting', message: null }
         },
       },
       requires: [],
@@ -85,7 +85,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
           const res = await valkey.exec(['valkey-cli', 'ping'])
           return res.stdout.toString().trim() === 'PONG'
             ? { result: 'success', message: null }
-            : { result: 'loading', message: null }
+            : { result: 'starting', message: null }
         },
       },
       requires: [],
@@ -107,12 +107,12 @@ export const main = sdk.setupMain(async ({ effects }) => {
             return res.ok
               ? { result: 'success', message: i18n('The forum is ready') }
               : {
-                  result: 'loading',
+                  result: 'starting',
                   message: i18n('Waiting for the application server'),
                 }
           } catch {
             return {
-              result: 'loading',
+              result: 'starting',
               message: i18n('Waiting for the application server'),
             }
           }
