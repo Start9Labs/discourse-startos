@@ -65,7 +65,7 @@ export const prepareStack = sdk.setupOnInit(async (effects, kind, progress) => {
           ])
           return exitCode === 0
             ? { result: 'success', message: null }
-            : { result: 'loading', message: null }
+            : { result: 'starting', message: null }
         },
       },
       requires: [],
@@ -79,7 +79,7 @@ export const prepareStack = sdk.setupOnInit(async (effects, kind, progress) => {
           const res = await valkey.exec(['valkey-cli', 'ping'])
           return res.stdout.toString().trim() === 'PONG'
             ? { result: 'success', message: null }
-            : { result: 'loading', message: null }
+            : { result: 'starting', message: null }
         },
       },
       requires: [],

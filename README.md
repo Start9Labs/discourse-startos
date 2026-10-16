@@ -152,7 +152,7 @@ The admin task is deliberately **not** critical, even though the credential flow
 
 The web check deliberately speaks HTTP rather than testing whether the port is open: nginx binds within a second of the container starting and answers 502 until unicorn is up, so a port probe would report ready while every request still failed.
 
-A `discourse` check stuck in `loading` past the grace period means unicorn did not come up — read the service logs. Because `MIGRATE_ON_BOOT` is off, that is never a migration in progress; a schema problem shows up during the install or update instead, as a failed transition.
+A `discourse` check stuck in `starting` past the grace period means unicorn did not come up — read the service logs. Because `MIGRATE_ON_BOOT` is off, that is never a migration in progress; a schema problem shows up during the install or update instead, as a failed transition.
 
 `email` reporting `disabled` is the expected state on a server with no mail configured. It never blocks anything; it exists because "nobody can register" is otherwise a silent condition.
 
