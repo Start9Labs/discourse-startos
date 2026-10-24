@@ -16,8 +16,12 @@ export const manifest = setupManifest({
       // Digest-pinned: the `-latest` tag is rebuilt in place from `main`, so
       // the name alone does not identify a schema level.
       source: {
-        dockerTag:
-          'discourse/discourse:2026.10.0-latest.1@sha256:ea5bb37164342d829b6f6719a31978edad543c17a189c08fec940de4b1bc28ae',
+        dockerBuild: {
+          buildArgs: {
+            IMAGE:
+              'discourse/discourse:2026.10.0-latest.1@sha256:ea5bb37164342d829b6f6719a31978edad543c17a189c08fec940de4b1bc28ae',
+          },
+        },
       },
       arch: ['x86_64', 'aarch64'],
     },

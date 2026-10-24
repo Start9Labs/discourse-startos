@@ -1,6 +1,6 @@
 # Updating the upstream version
 
-Upstream is the prebuilt `discourse/discourse` image, pinned by tag and digest in `startos/manifest/index.ts`. Nothing is built from source here, and there is no submodule.
+Upstream is the prebuilt `discourse/discourse` image, pinned by tag and digest in `startos/manifest/index.ts` and wrapped by the root `Dockerfile`. Nothing is built from source here, and there is no submodule.
 
 ## Which line this package tracks
 
@@ -54,8 +54,8 @@ one — the index is what covers both architectures.
 
 ## Applying the bump
 
-1. Set `images.discourse.source.dockerTag` in `startos/manifest/index.ts` to
-   `discourse/discourse:<tag>@<index-digest>`.
+1. Set `images.discourse.source.dockerBuild.buildArgs.IMAGE` in `startos/manifest/index.ts` to
+   `discourse/discourse:<tag>@<index-digest>`. Keep the root `Dockerfile`'s gem CA replacement and its check until every CA file the image's gems bundle is verified to exclude emSign ECC Root CA - G3; switching back to `dockerTag` before then bypasses the security fix.
 2. Set `version` in `startos/versions/current.ts` to `<tag>:0` — the `-latest` suffix included, so ExVer parses it as a prerelease and the line stays monotonic (`2026.9.0-latest` < `2026.10.0-latest`). Write release notes in all five locales.
 3. Check whether the image's PostgreSQL major moved — `docker run --rm discourse/discourse:<tag> printenv PG_MAJOR`. If it did, the `postgres` image tag and `POSTGRES_PGDATA_SUBPATH` in `startos/utils.ts` must move with it, and the upgrade needs a `pg_upgrade` path: a PostgreSQL data directory is not readable by a different major version.
 4. Check whether the bundled plugin set changed — `docker run --rm discourse/discourse:<tag> ls /var/www/discourse/plugins`. A plugin leaving core is a plugin an installed forum loses.
