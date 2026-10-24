@@ -32,13 +32,13 @@
 
 ## Image and Container Runtime
 
-Three unmodified upstream images, all `x86_64` and `aarch64`. Nothing is built from a Dockerfile.
+Three upstream images, all `x86_64` and `aarch64`. The root `Dockerfile` wraps `discourse/discourse` to overwrite every CA file a bundled gem ships (Stripe's, for one) with the image's system store wherever it still trusts emSign ECC Root CA - G3; the other two are used unmodified.
 
-| Image                  | Subcontainer | Role                                                       |
-| ---------------------- | ------------ | ---------------------------------------------------------- |
-| `discourse/discourse`  | `discourse`  | nginx, unicorn and sidekiq, supervised by runit             |
-| `pgvector/pgvector`    | `postgres`   | the database                                                |
-| `valkey/valkey`        | `valkey`     | cache, sidekiq's job queue, and message-bus backlog         |
+| Image                 | Subcontainer | Role                                                |
+| --------------------- | ------------ | --------------------------------------------------- |
+| `discourse/discourse` | `discourse`  | nginx, unicorn and sidekiq, supervised by runit     |
+| `pgvector/pgvector`   | `postgres`   | the database                                        |
+| `valkey/valkey`       | `valkey`     | cache, sidekiq's job queue, and message-bus backlog |
 
 The Discourse image's command is `/sbin/boot`, which starts runit, so the daemon sets `runAsInit: true`. Its processes drop to `discourse:www-data` (uid 1000, gid 33) once runit is up.
 
@@ -52,13 +52,13 @@ Postgres must carry pgvector: Discourse's core migrations need `hstore`, `pg_trg
 
 Five volumes. Only two of them hold anything the user would miss.
 
-| Volume    | Mount point                            | Contents                                                         |
-| --------- | -------------------------------------- | ---------------------------------------------------------------- |
-| `startos` | —                                      | `store.json`                                                     |
-| `shared`  | `/shared`                              | uploads, Discourse's own export archives, Rails logs, spool state |
-| `db`      | `/var/lib/postgresql`                  | PostgreSQL cluster (`PGDATA` is `/18/docker` inside it)          |
-| `redis`   | `/data`                                | Valkey RDB snapshots — the sidekiq job queue                     |
-| `assets`  | `public/assets`                        | compiled CSS and JavaScript                                      |
+| Volume    | Mount point           | Contents                                                          |
+| --------- | --------------------- | ----------------------------------------------------------------- |
+| `startos` | —                     | `store.json`                                                      |
+| `shared`  | `/shared`             | uploads, Discourse's own export archives, Rails logs, spool state |
+| `db`      | `/var/lib/postgresql` | PostgreSQL cluster (`PGDATA` is `/18/docker` inside it)           |
+| `redis`   | `/data`               | Valkey RDB snapshots — the sidekiq job queue                      |
+| `assets`  | `public/assets`       | compiled CSS and JavaScript                                       |
 
 `/shared` is the single application data path: `public/uploads`, `public/backups`, `log/*.log` and `tmp/{backups,restores}` are all symlinks into it inside the image.
 
@@ -70,14 +70,14 @@ Discourse's two precompiled JavaScript bundles, `tmp/asset-processor` and `tmp/p
 
 One model, `store.json` on the `startos` volume. It holds StartOS-side state only; Discourse's own configuration is delivered by environment variable.
 
-| Key                | Written by                             | Survives a hand edit                                 |
-| ------------------ | -------------------------------------- | ---------------------------------------------------- |
-| `postgresPassword` | init, on install                       | yes, but the database will no longer accept it       |
-| `secretKeyBase`    | init, on install                       | yes — changing it signs out every session            |
-| `primaryUrl`       | `set-primary-url`, or init's fallback  | yes                                                  |
-| `adminEmail`       | `set-admin-password`                   | yes; clearing it re-raises the task                  |
-| `unicornWorkers`   | `set-worker-count`                     | yes                                                  |
-| `smtp`             | `configure-smtp`                       | yes                                                  |
+| Key                | Written by                            | Survives a hand edit                           |
+| ------------------ | ------------------------------------- | ---------------------------------------------- |
+| `postgresPassword` | init, on install                      | yes, but the database will no longer accept it |
+| `secretKeyBase`    | init, on install                      | yes — changing it signs out every session      |
+| `primaryUrl`       | `set-primary-url`, or init's fallback | yes                                            |
+| `adminEmail`       | `set-admin-password`                  | yes; clearing it re-raises the task            |
+| `unicornWorkers`   | `set-worker-count`                    | yes                                            |
+| `smtp`             | `configure-smtp`                      | yes                                            |
 
 Nothing re-asserts these on start; each is written once by its action and read thereafter.
 
@@ -93,8 +93,8 @@ None.
 
 ## Network Access and Interfaces
 
-| Interface | Type | Container port | Serves                                     |
-| --------- | ---- | -------------- | ------------------------------------------ |
+| Interface | Type | Container port | Serves                                      |
+| --------- | ---- | -------------- | ------------------------------------------- |
 | `ui`      | `ui` | 80             | the forum and, at `/admin`, the admin panel |
 
 The interface nominates the primary URL as its launcher address, so **Open UI** opens the forum at the address Discourse writes into its links.
@@ -133,10 +133,10 @@ All four are user-facing; none are hidden. Each writes to `store.json` and nothi
 
 Two, both raised from `init`. Running the action a task points at clears it; the primary-URL task also clears itself when the stored address is offered again.
 
-| Task                 | Severity    | Raised when                                                                         |
-| -------------------- | ----------- | ------------------------------------------------------------------------------------ |
-| `set-primary-url`    | `critical`  | the stored primary URL is unset, or no longer among the service's addresses          |
-| `set-admin-password` | `important` | `adminEmail` is unset in `store.json`                                                |
+| Task                 | Severity    | Raised when                                                                 |
+| -------------------- | ----------- | --------------------------------------------------------------------------- |
+| `set-primary-url`    | `critical`  | the stored primary URL is unset, or no longer among the service's addresses |
+| `set-admin-password` | `important` | `adminEmail` is unset in `store.json`                                       |
 
 The primary-URL task is `critical` because the container genuinely cannot boot without a hostname; while it is raised the service will not start and its ordinary controls are suspended. It can return if the user later removes the address Discourse was pointed at.
 
@@ -144,11 +144,11 @@ The admin task is deliberately **not** critical, even though the credential flow
 
 ## Health Checks
 
-| Check                | Probes                                                                                    |
-| -------------------- | ------------------------------------------------------------------------------------------ |
-| `discourse` (daemon) | `GET /srv/status` on the container's own port, 180 s grace                                |
-| `email`              | whether SMTP is configured; reports `disabled`, never a failure                           |
-| `postgres`, `valkey` | `pg_isready` and `valkey-cli ping`, both `display: null`                                  |
+| Check                | Probes                                                          |
+| -------------------- | --------------------------------------------------------------- |
+| `discourse` (daemon) | `GET /srv/status` on the container's own port, 180 s grace      |
+| `email`              | whether SMTP is configured; reports `disabled`, never a failure |
+| `postgres`, `valkey` | `pg_isready` and `valkey-cli ping`, both `display: null`        |
 
 The web check deliberately speaks HTTP rather than testing whether the port is open: nginx binds within a second of the container starting and answers 502 until unicorn is up, so a port probe would report ready while every request still failed.
 
@@ -184,11 +184,12 @@ Discourse's own backup archives restore too, which is how an existing forum move
 ```yaml
 package_id: discourse
 images:
-  discourse: discourse/discourse
+  discourse: discourse/discourse + root Dockerfile (gem CA files replaced)
   postgres: pgvector/pgvector
   valkey: valkey/valkey
 architectures: [x86_64, aarch64]
-subcontainers: [discourse, postgres, valkey, init-discourse, init-postgres, init-valkey]
+subcontainers:
+  [discourse, postgres, valkey, init-discourse, init-postgres, init-valkey]
 volumes:
   startos: null # store.json; reached through the file model, never mounted
   shared: /shared
