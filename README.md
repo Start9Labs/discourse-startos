@@ -36,7 +36,7 @@ Three upstream images, all `x86_64` and `aarch64`. The root `Dockerfile` wraps `
 
 | Image                 | Subcontainer | Role                                                |
 | --------------------- | ------------ | --------------------------------------------------- |
-| `discourse/discourse` | `discourse`  | nginx, unicorn and sidekiq, supervised by runit     |
+| `discourse/discourse` | `discourse`  | nginx, Pitchfork and sidekiq, supervised by runit     |
 | `pgvector/pgvector`   | `postgres`   | the database                                        |
 | `valkey/valkey`       | `valkey`     | cache, sidekiq's job queue, and message-bus backlog |
 
@@ -107,7 +107,7 @@ The image's nginx overwrites `X-Forwarded-For` with the address of its own peer,
 
 ## Installation and First-Run Flow
 
-`rake db:migrate` and `rake assets:precompile` are the package's responsibility, not the daemon's — `MIGRATE_ON_BOOT` and `PRECOMPILE_ON_BOOT` are both `0` in the daemon's environment. Instead a `setupOnInit` handler guarded on `kind` runs them on install, update and restore (never on a plain container rebuild) using `runUntilSuccess` over a throwaway postgres/valkey/discourse chain, reporting two progress phases. A failure there fails the transition and StartOS restores the volumes, where the same failure inside the daemon would leave runit crash-looping unicorn indefinitely.
+`rake db:migrate` and `rake assets:precompile` are the package's responsibility, not the daemon's — `MIGRATE_ON_BOOT` and `PRECOMPILE_ON_BOOT` are both `0` in the daemon's environment. Instead a `setupOnInit` handler guarded on `kind` runs them on install, update and restore (never on a plain container rebuild) using `runUntilSuccess` over a throwaway postgres/valkey/discourse chain, reporting two progress phases. A failure there fails the transition and StartOS restores the volumes, where the same failure inside the daemon would leave runit crash-looping the web server indefinitely.
 
 That pass takes roughly 40 seconds on a fresh install. Ordinary restarts skip it and reach a serving state in about 15.
 
@@ -127,7 +127,7 @@ All four are user-facing; none are hidden. Each writes to `store.json` and nothi
 
 **`configure-smtp`** — three-mode SMTP (disabled / StartOS system / custom). Restarts Discourse. Repeat-safe. Until it is run, only accounts created by `set-admin-password` can sign in.
 
-**`set-worker-count`** — sets `UNICORN_WORKERS`, 1–8, default 1. Restarts Discourse. Each worker is a separate Unicorn process, so memory use grows with the count.
+**`set-worker-count`** — sets `UNICORN_WORKERS`, 1–8, default 1. Restarts Discourse. Each worker is a separate Pitchfork process, so memory use grows with the count.
 
 ## Tasks
 
@@ -150,9 +150,9 @@ The admin task is deliberately **not** critical, even though the credential flow
 | `email`              | whether SMTP is configured; reports `disabled`, never a failure |
 | `postgres`, `valkey` | `pg_isready` and `valkey-cli ping`, both `display: null`        |
 
-The web check deliberately speaks HTTP rather than testing whether the port is open: nginx binds within a second of the container starting and answers 502 until unicorn is up, so a port probe would report ready while every request still failed.
+The web check deliberately speaks HTTP rather than testing whether the port is open: nginx binds within a second of the container starting and answers 502 until the web server is up, so a port probe would report ready while every request still failed.
 
-A `discourse` check stuck in `starting` past the grace period means unicorn did not come up — read the service logs. Because `MIGRATE_ON_BOOT` is off, that is never a migration in progress; a schema problem shows up during the install or update instead, as a failed transition.
+A `discourse` check stuck in `starting` past the grace period means the web server did not come up — read the service logs. Because `MIGRATE_ON_BOOT` is off, that is never a migration in progress; a schema problem shows up during the install or update instead, as a failed transition.
 
 `email` reporting `disabled` is the expected state on a server with no mail configured. It never blocks anything; it exists because "nobody can register" is otherwise a silent condition.
 
@@ -166,7 +166,7 @@ Alongside it, two volumes are synced wholesale: `startos`, and `shared` minus `/
 
 A restored instance is immediately usable. `secretKeyBase` comes back with `store.json`, so existing sessions and auth tokens survive.
 
-Discourse's own backup archives restore too, which is how an existing forum moves onto this package. The archive goes in `/shared/backups/default/` (host path `/media/startos/data/package-data/volumes/discourse/data/shared/backups/default/`, owner `1000:33`), where the admin panel's Backups page lists it; a restore needs the `allow_restore` site setting on (`discourse enable_restore` in the `discourse` subcontainer) and runs while the service is running, with `discourse restore <file>` from that subcontainer as the CLI equivalent. The archive's schema version must not exceed the running image's (`UPDATING.md` § Refreshing the digest on demand). Two things the restorer does deserve knowing in advance: it rewrites every occurrence of the backup's base URL to the current primary URL, so **set the primary URL to the forum's real address before restoring** — `set-primary-url` does not remap afterwards; and the CLI form sets `disable_emails` to `non-staff` unless passed `--no-disable-emails`. Posts containing uploads are rebaked by sidekiq afterwards at roughly twenty a minute, `rake posts:rebake_uncooked_posts` being the way to hurry it.
+Discourse's own backup archives restore too, which is how an existing forum moves onto this package. The archive goes in `/shared/backups/default/` (host path `/media/startos/data/package-data/volumes/discourse/data/shared/backups/default/`, owner `1000:33`), where the admin panel's Backups page lists it; a restore needs the `allow_restore` site setting on (`discourse enable_restore` in the `discourse` subcontainer) and runs while the service is running, with `discourse restore <file>` from that subcontainer as the CLI equivalent. Neither the archive's Discourse application version nor its schema version may exceed the running image's (`UPDATING.md` § Refreshing the digest on demand). Two things the restorer does deserve knowing in advance: it rewrites every occurrence of the backup's base URL to the current primary URL, so **set the primary URL to the forum's real address before restoring** — `set-primary-url` does not remap afterwards; and the CLI form sets `disable_emails` to `non-staff` unless passed `--no-disable-emails`. Posts containing uploads are rebaked by sidekiq afterwards at roughly twenty a minute, `rake posts:rebake_uncooked_posts` being the way to hurry it.
 
 ## Limitations and Differences
 
