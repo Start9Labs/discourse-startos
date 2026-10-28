@@ -34,11 +34,11 @@ The forum itself, with the admin panel at `/admin` once you are signed in as an 
 - **Set Primary URL** — chooses which of your addresses Discourse treats as canonical, and the one **Open UI** opens. Links already written into existing posts keep the old address.
 - **Set Worker Count** — trades memory for the number of requests Discourse serves at once. One worker suits a small community; raise it if the forum feels slow and the server has memory to spare.
 
-Each of these restarts Discourse to take effect.
+Configure SMTP, Set Primary URL, and Set Worker Count restart Discourse to take effect. Set Admin Password leaves the forum running.
 
 ### Moving an existing forum here
 
-Discourse's own backups carry a forum across servers. On the old server, open **Admin → Backups**, create a backup with uploads, and download it. Here, run **Set Primary URL** first and choose the address the forum will actually be reached at — the restore rewrites every link in the forum to whichever address is current, and there is no undo. Then turn on **allow restore** under **Admin → Settings → Backups**, upload the file on the Backups page and choose **Restore**. Discourse switches off outgoing email for everyone but staff during a restore; turn it back on under **Admin → Settings → Email → disable emails** once you have checked the forum over. Run **Configure SMTP** here as well — mail settings do not travel with the backup.
+Discourse's own backups carry a forum across servers. The destination must support both the Discourse release and the database schema recorded in the backup; a backup from a newer instance cannot be restored to an older one. On the old server, open **Admin → Backups**, create a backup with uploads, and download it. Here, run **Set Primary URL** first and choose the address the forum will actually be reached at — the restore rewrites every link in the forum to whichever address is current, and there is no undo. Then turn on **allow restore** under **Admin → Settings → Backups**, upload the file on the Backups page and choose **Restore**. Discourse switches off outgoing email for everyone but staff during a restore; turn it back on under **Admin → Settings → Email → disable emails** once you have checked the forum over. Run **Configure SMTP** here as well — mail settings do not travel with the backup.
 
 ### Updates
 

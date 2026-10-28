@@ -4,10 +4,12 @@ Upstream is the prebuilt `discourse/discourse` image, pinned by tag and digest i
 
 ## Which line this package tracks
 
-Discourse publishes two lines to the same repository from the same pipeline, cut on the same dates:
+Discourse publishes two lines to the same image repository:
 
-- **`main`** — `2026.9.0-latest`, `2026.10.0-latest` … The `-latest` suffix marks it. **This is the line this package tracks**, and `discourse/discourse:latest` points at it.
-- **stable** — `2026.7.0`, `2026.7.1`, `2026.7.2` … No suffix, numbered two behind the `main` line.
+- **`main`** — `2026.9.0-latest`, `2026.10.0-latest`, `2026.11.0-latest` … The `-latest` suffix marks it. **This is the line this package tracks**, and `discourse/discourse:latest` points at it.
+- **ESR (stable)** — `2026.7.0`, `2026.7.1`, `2026.7.4` … No suffix. ESR releases receive backported fixes while the `main` line advances; the gap between their version numbers is not fixed.
+
+Upstream uses date-based release numbers, not SemVer. See its [release-channel policy](https://meta.discourse.org/t/understanding-discourse-release-channels/264400). A new `-latest` tag starts the next development release; it is not the completed monthly release of that number.
 
 **Do not move this package to the stable line.** It is not a matter of taste:
 
