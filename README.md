@@ -36,7 +36,7 @@ Three upstream images, all `x86_64` and `aarch64`. The root `Dockerfile` wraps `
 
 | Image                 | Subcontainer | Role                                                |
 | --------------------- | ------------ | --------------------------------------------------- |
-| `discourse/discourse` | `discourse`  | nginx, Pitchfork and sidekiq, supervised by runit     |
+| `discourse/discourse` | `discourse`  | nginx, Pitchfork and sidekiq, supervised by runit   |
 | `pgvector/pgvector`   | `postgres`   | the database                                        |
 | `valkey/valkey`       | `valkey`     | cache, sidekiq's job queue, and message-bus backlog |
 
