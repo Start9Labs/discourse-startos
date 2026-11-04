@@ -11,13 +11,7 @@ Discourse publishes two lines to the same image repository:
 
 Upstream uses date-based release numbers, not SemVer. See its [release-channel policy](https://meta.discourse.org/t/understanding-discourse-release-channels/264400). A new `-latest` tag starts the next development release; it is not the completed monthly release of that number.
 
-**Do not move this package to the stable line.** It is not a matter of taste:
-
-- Stable point releases carry backports and **no new migrations** — `2026.7.0`, `.1` and `.2` all sit at migration `20260721122254`, while the `main` line had advanced to `20260824072257`.
-- Discourse has no schema downgrade. Once an installed database has run migrations from the `main` line, a stable image cannot serve it.
-- `lib/backup_restore/meta_data_handler.rb` refuses a backup whose schema version exceeds the running instance's, so a stable-pinned package cannot accept a backup from a `main`-line instance — which is what upstream's standard `launcher` install produces.
-
-Moving lines is a one-way door for every installed server. Treat it as a decision, not a bump.
+**Do not move this package to the stable line.** Discourse has no schema downgrade, so a stable image cannot serve a database that has run `main`-line migrations. Moving lines is a one-way door for every installed server; treat it as a decision, not a bump.
 
 ## Determining the upstream version
 
@@ -38,14 +32,9 @@ docker manifest inspect discourse/discourse:<tag> | jq -r '.manifests[].platform
 
 ## The tag is mutable — pin the digest
 
-`discourse/discourse:2026.9.0-latest` is **rebuilt in place**. Its git tag is cut when
-the release line begins, while nightly image builds continue taking newer `main` commits
-and schema migrations. The tag name identifies a release line, not a build, so on its own
-it does not identify a schema level — and a schema level is exactly what decides whether
-a backup from another instance can be restored.
-
-So the pin carries both: the tag for a human, the digest for the machine. Take the digest
-current on the day of the bump:
+`discourse/discourse:2026.9.0-latest` is **rebuilt in place** nightly, so the tag alone
+does not identify a schema level. The pin carries both the tag and the digest. Take the
+digest current on the day of the bump:
 
 ```bash
 docker buildx imagetools inspect discourse/discourse:<tag> --format '{{.Manifest.Digest}}'
@@ -58,17 +47,13 @@ one — the index is what covers both architectures.
 
 1. Set `images.discourse.source.dockerBuild.buildArgs.IMAGE` in `startos/manifest/index.ts` to
    `discourse/discourse:<tag>@<index-digest>`. Keep the root `Dockerfile`'s gem CA replacement and its check until every CA file the image's gems bundle is verified to exclude emSign ECC Root CA - G3; switching back to `dockerTag` before then bypasses the security fix.
-2. Set `version` in `startos/versions/current.ts` to `<tag>:0` — the `-latest` suffix included, so ExVer parses it as a prerelease and the line stays monotonic (`2026.9.0-latest` < `2026.10.0-latest`). Write release notes in all five locales.
+2. Set `version` in `startos/versions/current.ts` to `<tag>:0` — the `-latest` suffix included, so ExVer parses it as a prerelease and the line stays monotonic (`2026.9.0-latest` < `2026.10.0-latest`).
 3. Check whether the image's PostgreSQL major moved — `docker run --rm discourse/discourse:<tag> printenv PG_MAJOR`. If it did, the `postgres` image tag and `POSTGRES_PGDATA_SUBPATH` in `startos/utils.ts` must move with it, and the upgrade needs a `pg_upgrade` path: a PostgreSQL data directory is not readable by a different major version.
 4. Check whether the bundled plugin set changed — `docker run --rm discourse/discourse:<tag> ls /var/www/discourse/plugins`. A plugin leaving core is a plugin an installed forum loses.
 5. Check that the image still ships both precompiled JavaScript bundles — `docker run --rm discourse/discourse:<tag> ls /var/www/discourse/tmp/asset-processor /var/www/discourse/tmp/pretty-text-processor` must list an `asset-processor-*.js` and a `pretty-text-*.js`. Init and the daemon run in separate containers and neither path is mounted, so the daemon only ever sees the bundles the image ships.
-
-Schema migrations and asset compilation run from `startos/init/prepareStack.ts` on the version edge, so nothing else needs touching for an ordinary bump.
 
 Discourse advises against skipping long stretches of releases; if the pin has fallen more than a year behind, step through an intermediate tag rather than jumping straight to the newest.
 
 ## Refreshing the digest on demand
 
-Between tag moves the pin holds one nightly build, so the package's schema level sits behind `main` for the rest of the release line. That matters in exactly one situation: restoring a backup from an instance that is ahead of it — a `launcher` install, which tracks `tests-passed`, or Start9's own forum when it migrates onto this package. The restore is refused until the package catches up.
-
-Catch it up as a revision bump, only when asked and right before the restore: re-pin the current index digest of the **same** tag and set `version` to `<tag>:<N+1>`. Steps 3 and 4 above still apply.
+A backup from an instance whose schema is ahead of the pinned build (e.g. a `launcher` install, which tracks `tests-passed`) is refused until the package catches up. Catch it up as a revision bump, only when asked and right before the restore: re-pin the current index digest of the **same** tag and set `version` to `<tag>:<N+1>`. Steps 3 and 4 above still apply.
