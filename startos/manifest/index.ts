@@ -19,7 +19,7 @@ export const manifest = setupManifest({
         dockerBuild: {
           buildArgs: {
             IMAGE:
-              'discourse/discourse:2026.11.0-latest@sha256:5281ecce4c41004d1657d7817bc59b6a336042dfd9f15b4bcf322fff0ac07002',
+              'discourse/discourse:2026.11.0-latest.1@sha256:fdd67451d3c00ba3c6dbf8c203972ddbc5dc7f01d1882b01059ffbb985867332',
           },
         },
       },
