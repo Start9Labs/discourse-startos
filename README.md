@@ -81,7 +81,7 @@ One model, `store.json` on the `startos` volume. It holds StartOS-side state onl
 
 Nothing re-asserts these on start; each is written once by its action and read thereafter.
 
-Discourse itself is configured entirely through `DISCOURSE_*` environment variables. The image's `/etc/runit/1.d/copy-env` translates them into `config/discourse.conf` at boot, and Discourse re-reads that file on every launch — so a change to any of them takes effect on the next start, not later.
+Discourse reads `DISCOURSE_*` environment variables directly on every launch, including the package's rake tasks and Rails runner actions. Changes take effect on the next start. `config/discourse.conf` is unsupported; its presence prevents Rails from booting. There is no generated application configuration file to inspect or edit.
 
 **A `DISCOURSE_*` variable whose name matches a site setting shadows that setting and hides it from the admin panel.** The package uses this deliberately for four: `force_https` (StartOS terminates TLS, so Discourse must write `https://` links), `version_checks` (the update nag is meaningless when updates come from the marketplace), the MaxMind refresh interval (precompile would otherwise reach out to maxmind.com), and `port`. Every other site setting stays the administrator's.
 
