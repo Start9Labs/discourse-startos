@@ -37,4 +37,3 @@ verified, tried, and decided belongs in the commit message and the PR body.
 - **`main` must not read the whole store with `.const()`.** `set-admin-password` writes `adminEmail`, and a read spanning it would restart Discourse the instant a user creates their account. Add a key to the projection only if changing it should restart the service.
 - **`prepareStack` must stay free of `.const()`.** An init handler re-runs from the top on every change to anything it reads reactively, and this one costs a full asset compile. That is why it resolves SMTP to `null` rather than calling `getSmtpCredentials`.
 - **Put a `DISCOURSE_*` variable in `discourseEnv` only for a setting the package owns.** It hides the site setting of the same name from the admin panel.
-- **Anything that execs into the app image must run the image's own `/etc/runit/1.d` scripts itself** (`00-ensure-links`, `copy-env`) — the entrypoint runs them; a bare `exec` does not.
