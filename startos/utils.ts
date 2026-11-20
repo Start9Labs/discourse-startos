@@ -227,23 +227,14 @@ export function prepareAppCommand(): [string, ...string[]] {
   ]
 }
 
-/**
- * Run a rake task with the package's settings in force. `copy-env` is the
- * image's own translation of `DISCOURSE_*` into `config/discourse.conf`, which
- * the entrypoint runs at boot and a bare `exec` does not.
- */
 export function rakeCommand(task: string): [string, ...string[]] {
-  return ['sh', '-c', `/etc/runit/1.d/copy-env && rake ${task}`]
+  return ['rake', task]
 }
 
 export const RUNNER_SCRIPT_PATH = '/tmp/startos-runner.rb'
 
 export function railsRunnerCommand(): [string, ...string[]] {
-  return [
-    'sh',
-    '-c',
-    `/etc/runit/1.d/copy-env && rails runner ${RUNNER_SCRIPT_PATH}`,
-  ]
+  return ['rails', 'runner', RUNNER_SCRIPT_PATH]
 }
 
 /**
@@ -254,7 +245,7 @@ export function precompileCommand(): [string, ...string[]] {
   return [
     'sh',
     '-c',
-    `find ${ASSETS_PATH} -mindepth 1 -delete && /etc/runit/1.d/copy-env && rake assets:precompile`,
+    `find ${ASSETS_PATH} -mindepth 1 -delete && rake assets:precompile`,
   ]
 }
 
