@@ -15,6 +15,7 @@ import {
   rakeCommand,
   requireSecrets,
   toHostAndPort,
+  valkeyCommand,
   valkeySub,
 } from '../utils'
 
@@ -72,7 +73,7 @@ export const prepareStack = sdk.setupOnInit(async (effects, kind, progress) => {
     })
     .addDaemon('valkey', {
       subcontainer: valkey,
-      exec: { command: sdk.useEntrypoint() },
+      exec: { command: valkeyCommand() },
       ready: {
         display: null,
         fn: async () => {

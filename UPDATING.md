@@ -54,6 +54,24 @@ one — the index is what covers both architectures.
 
 Discourse advises against skipping long stretches of releases; if the pin has fallen more than a year behind, step through an intermediate tag rather than jumping straight to the newest.
 
+## Sidecar images
+
+`images.postgres` and `images.valkey` in `startos/manifest/index.ts` are pinned to exact tags. Bring each to its newest tag in the same line:
+
+- **Postgres** — `pgvector/pgvector:<pgvector>-pg<PG_MAJOR>`, the PostgreSQL major matching step 3 above:
+
+  ```bash
+  curl -fsSL "https://hub.docker.com/v2/repositories/pgvector/pgvector/tags?page_size=50&name=pg18&ordering=last_updated" \
+    | jq -r '.results[].name' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+-pg18$' | head
+  ```
+
+- **Valkey** — `valkey/valkey:9.<minor>.<patch>-alpine`:
+
+  ```bash
+  curl -fsSL "https://hub.docker.com/v2/repositories/valkey/valkey/tags?page_size=50&name=9.&ordering=last_updated" \
+    | jq -r '.results[].name' | grep -E '^9\.[0-9]+\.[0-9]+-alpine$' | head
+  ```
+
 ## Refreshing the digest on demand
 
 A backup from an instance whose schema is ahead of the pinned build (e.g. a `launcher` install, which tracks `tests-passed`) is refused until the package catches up. Catch it up as a revision bump, only when asked and right before the restore: re-pin the current index digest of the **same** tag and set `version` to `<tag>:<N+1>`. Steps 3 and 4 above still apply.
