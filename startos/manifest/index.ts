@@ -26,11 +26,11 @@ export const manifest = setupManifest({
       arch: ['x86_64', 'aarch64'],
     },
     postgres: {
-      source: { dockerTag: 'pgvector/pgvector:pg18' },
+      source: { dockerTag: 'pgvector/pgvector:0.8.7-pg18' },
       arch: ['x86_64', 'aarch64'],
     },
     valkey: {
-      source: { dockerTag: 'valkey/valkey:9-alpine' },
+      source: { dockerTag: 'valkey/valkey:9.2.0-alpine' },
       arch: ['x86_64', 'aarch64'],
     },
   },
