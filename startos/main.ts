@@ -12,6 +12,7 @@ import {
   requireSecrets,
   toHostAndPort,
   uiPort,
+  valkeyCommand,
   valkeySub,
   POSTGRES_USER,
 } from './utils'
@@ -78,16 +79,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
     })
     .addDaemon('valkey', {
       subcontainer: valkey,
-      exec: {
-        command: sdk.useEntrypoint([
-          'valkey-server',
-          '--bind',
-          '127.0.0.1',
-          '-::1',
-          '--protected-mode',
-          'yes',
-        ]),
-      },
+      exec: { command: valkeyCommand() },
       ready: {
         display: null,
         fn: async () => {

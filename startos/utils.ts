@@ -66,6 +66,18 @@ export function postgresSub(effects: T.Effects, name = 'postgres') {
   )
 }
 
+/** Valkey must remain loopback-only during init and normal operation. */
+export function valkeyCommand() {
+  return sdk.useEntrypoint([
+    'valkey-server',
+    '--bind',
+    '127.0.0.1',
+    '-::1',
+    '--protected-mode',
+    'yes',
+  ])
+}
+
 export function valkeySub(effects: T.Effects, name = 'valkey') {
   return sdk.SubContainer.of(
     effects,
